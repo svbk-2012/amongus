@@ -1,0 +1,415 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Among Us 2D Multiplayer</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Arial:wght@400;700&display=swap');
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Arial', sans-serif;
+            background: linear-gradient(135deg, #0f0f23 0%, #1a1a3e 50%, #2d2d5f 100%);
+            min-height: 100vh;
+            position: relative;
+            overflow: hidden;
+        }
+
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image: 
+                radial-gradient(circle at 20% 50%, rgba(120, 119, 198, 0.3) 0%, transparent 50%),
+                radial-gradient(circle at 80% 80%, rgba(255, 119, 198, 0.3) 0%, transparent 50%),
+                radial-gradient(circle at 40% 80%, rgba(120, 219, 255, 0.2) 0%, transparent 50%);
+            z-index: -1;
+        }
+
+        #menuScreen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            background: rgba(0,0,0,0.8);
+            z-index: 1000;
+        }
+
+        .menu-container {
+            background: rgba(0,0,0,0.9);
+            border: 3px solid #ff6b6b;
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 0 30px rgba(255,107,107,0.5);
+            max-width: 500px;
+            width: 90%;
+        }
+
+        .menu-title {
+            font-family: 'Bebas Neue', cursive;
+            color: #ff6b6b;
+            font-size: 3rem;
+            text-align: center;
+            margin-bottom: 30px;
+            text-shadow: 3px 3px 0px #c92a2a, 0 0 20px rgba(255,107,107,0.5);
+            letter-spacing: 3px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            color: #ff9999;
+            margin-bottom: 8px;
+            font-weight: 600;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 12px;
+            background: rgba(255,255,255,0.1);
+            border: 2px solid rgba(255,107,107,0.3);
+            border-radius: 8px;
+            color: white;
+            font-size: 16px;
+            transition: all 0.3s ease;
+        }
+
+        .form-group input:focus {
+            outline: none;
+            border-color: #ff6b6b;
+            background: rgba(255,255,255,0.15);
+        }
+
+        .form-group input::placeholder {
+            color: rgba(255,255,255,0.5);
+        }
+
+        .btn {
+            width: 100%;
+            padding: 15px;
+            background: linear-gradient(145deg, #ff6b6b, #ff4444);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 18px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 10px;
+        }
+
+        .btn:hover {
+            background: linear-gradient(145deg, #ff4444, #ff2222);
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(255,107,107,0.4);
+        }
+
+        .btn-secondary {
+            background: linear-gradient(145deg, #667eea, #5a67d8);
+        }
+
+        .btn-secondary:hover {
+            background: linear-gradient(145deg, #5a67d8, #4c51bf);
+        }
+
+        #gameCanvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            cursor: crosshair;
+        }
+
+        #gameUI {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 100;
+        }
+
+        .game-header {
+            position: absolute;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0,0,0,0.8);
+            padding: 15px 30px;
+            border-radius: 15px;
+            border: 2px solid #ff6b6b;
+            color: white;
+            text-align: center;
+            pointer-events: auto;
+        }
+
+        .game-title {
+            font-family: 'Bebas Neue', cursive;
+            color: #ff6b6b;
+            font-size: 2rem;
+            margin-bottom: 10px;
+        }
+
+        .game-info {
+            display: flex;
+            gap: 20px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .info-item {
+            background: rgba(255,255,255,0.1);
+            padding: 5px 15px;
+            border-radius: 20px;
+            border: 1px solid rgba(255,107,107,0.5);
+            font-size: 14px;
+        }
+
+        .chat-panel {
+            position: absolute;
+            bottom: 20px;
+            right: 20px;
+            width: 300px;
+            height: 250px;
+            background: rgba(0,0,0,0.8);
+            border: 2px solid #ff6b6b;
+            border-radius: 15px;
+            padding: 15px;
+            pointer-events: auto;
+        }
+
+        .chat-messages {
+            height: 180px;
+            overflow-y: auto;
+            background: rgba(0,0,0,0.3);
+            border-radius: 8px;
+            padding: 10px;
+            margin-bottom: 10px;
+        }
+
+        .chat-message {
+            margin-bottom: 5px;
+            padding: 5px;
+            border-radius: 5px;
+            background: rgba(255,255,255,0.05);
+            font-size: 12px;
+            color: white;
+            word-wrap: break-word;
+        }
+
+        .chat-sender {
+            color: #ff6b6b;
+            font-weight: bold;
+        }
+
+        .chat-input-group {
+            display: flex;
+            gap: 5px;
+        }
+
+        .chat-input {
+            flex: 1;
+            padding: 5px 10px;
+            background: rgba(255,255,255,0.1);
+            border: 1px solid rgba(255,107,107,0.3);
+            border-radius: 5px;
+            color: white;
+            font-size: 12px;
+        }
+
+        .chat-send {
+            padding: 5px 10px;
+            background: #ff6b6b;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 12px;
+        }
+
+        .controls-panel {
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            background: rgba(0,0,0,0.8);
+            border: 2px solid #ff6b6b;
+            border-radius: 15px;
+            padding: 15px;
+            pointer-events: auto;
+        }
+
+        .control-btn {
+            display: block;
+            width: 150px;
+            padding: 10px;
+            background: linear-gradient(145deg, #ff6b6b, #ff4444);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            margin-bottom: 10px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+
+        .control-btn:hover {
+            background: linear-gradient(145deg, #ff4444, #ff2222);
+            transform: translateY(-1px);
+        }
+
+        .control-btn:disabled {
+            background: #666;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .player-list {
+            position: absolute;
+            top: 100px;
+            left: 20px;
+            background: rgba(0,0,0,0.8);
+            border: 2px solid #ff6b6b;
+            border-radius: 15px;
+            padding: 15px;
+            pointer-events: auto;
+            min-width: 200px;
+        }
+
+        .player-item {
+            display: flex;
+            align-items: center;
+            margin-bottom: 10px;
+            padding: 5px;
+            border-radius: 5px;
+            background: rgba(255,255,255,0.05);
+        }
+
+        .player-color {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            margin-right: 10px;
+            border: 2px solid rgba(255,255,255,0.3);
+        }
+
+        .player-name {
+            color: white;
+            font-weight: 600;
+            font-size: 14px;
+        }
+
+        .player-status {
+            margin-left: auto;
+            font-size: 12px;
+            padding: 2px 8px;
+            border-radius: 10px;
+            background: rgba(255,255,255,0.1);
+        }
+
+        .player-dead {
+            opacity: 0.5;
+            text-decoration: line-through;
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        @media (max-width: 768px) {
+            .chat-panel {
+                width: 250px;
+                height: 200px;
+                right: 10px;
+                bottom: 10px;
+            }
+            
+            .controls-panel {
+                left: 10px;
+                bottom: 10px;
+            }
+            
+            .player-list {
+                top: 80px;
+                left: 10px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Menu Screen -->
+    <div id="menuScreen">
+        <div class="menu-container">
+            <h1 class="menu-title">AMONG US 2D</h1>
+            
+            <div class="form-group">
+                <label for="playerName">Your Name</label>
+                <input type="text" id="playerName" placeholder="Enter your name" maxlength="12">
+            </div>
+            
+            <div class="form-group">
+                <label for="roomCode">Room Code (optional)</label>
+                <input type="text" id="roomCode" placeholder="Enter room code or leave empty to create" maxlength="6">
+            </div>
+            
+            <button class="btn" id="createBtn">Create Room</button>
+            <button class="btn btn-secondary" id="joinBtn">Join Room</button>
+        </div>
+    </div>
+
+    <!-- Game Canvas -->
+    <canvas id="gameCanvas"></canvas>
+    
+    <!-- Game UI -->
+    <div id="gameUI" class="hidden">
+        <div class="game-header">
+            <div class="game-title">AMONG US 2D</div>
+            <div class="game-info">
+                <div class="info-item">Room: <span id="roomCodeDisplay">-</span></div>
+                <div class="info-item">Players: <span id="playerCount">0/10</span></div>
+                <div class="info-item">Status: <span id="gameStatus">Lobby</span></div>
+            </div>
+        </div>
+
+        <div class="player-list" id="playerList">
+            <h3 style="color: #ff6b6b; margin-bottom: 10px;">Players</h3>
+            <div id="playerListContent"></div>
+        </div>
+
+        <div class="controls-panel">
+            <button class="control-btn" id="startGameBtn">Start Game</button>
+            <button class="control-btn" id="leaveBtn">Leave Room</button>
+        </div>
+
+        <div class="chat-panel">
+            <div class="chat-messages" id="chatMessages"></div>
+            <div class="chat-input-group">
+                <input type="text" class="chat-input" id="chatInput" placeholder="Type message..." maxlength="50">
+                <button class="chat-send" id="chatSend">Send</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="game.js"></script>
+</body>
+</html>
